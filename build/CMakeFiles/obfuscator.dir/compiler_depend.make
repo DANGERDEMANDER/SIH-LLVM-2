@@ -542,7 +542,8 @@ CMakeFiles/obfuscator.dir/tools/obfus_cli.cpp.o: ../tools/obfus_cli.cpp \
   /usr/include/c++/11/fstream \
   /usr/include/x86_64-linux-gnu/c++/11/bits/basic_file.h \
   /usr/include/x86_64-linux-gnu/c++/11/bits/c++io.h \
-  /usr/include/c++/11/bits/fstream.tcc
+  /usr/include/c++/11/bits/fstream.tcc \
+  /usr/include/c++/11/iostream
 
 
 /usr/include/c++/11/bits/fstream.tcc:
@@ -1014,6 +1015,8 @@ CMakeFiles/obfuscator.dir/tools/obfus_cli.cpp.o: ../tools/obfus_cli.cpp \
 /usr/include/c++/11/cwchar:
 
 /usr/lib/llvm-14/include/llvm-c/Error.h:
+
+/usr/include/c++/11/iostream:
 
 /usr/include/x86_64-linux-gnu/bits/uintn-identity.h:
 

@@ -15,10 +15,13 @@ using namespace llvm;
 
 static cl::opt<std::string> InputPath(cl::Positional, cl::desc("<input.bc>"), cl::Required);
 static cl::opt<std::string> PluginPath("-plugin", cl::desc("Path to plugin"), cl::init("./libObfPasses.so"));
+static cl::alias PluginPathShort("-p", cl::aliasopt(PluginPath));
+static cl::opt<bool> Verbose("-verbose", cl::desc("Verbose logging"), cl::init(false));
+static cl::alias VerboseShort("-v", cl::aliasopt(Verbose));
 
 int main(int argc, char **argv) {
   InitLLVM X(argc, argv);
-  cl::ParseCommandLineOptions(argc, argv, "run_cff - programmatic test runner\n");
+  cl::ParseCommandLineOptions(argc, argv, "run_cff - programmatic test runner (loads plugin and runs 'cff')\n");
 
   LLVMContext Ctx;
   SMDiagnostic Err;
@@ -30,9 +33,9 @@ int main(int argc, char **argv) {
   std::string PluginToLoad = PluginPath;
   if (const char *envPlugin = std::getenv("RUN_CFF_PLUGIN")) {
     PluginToLoad = std::string(envPlugin);
-    errs() << "[RUN_CFF] overriding plugin path from RUN_CFF_PLUGIN: " << PluginToLoad << "\n";
+    if (Verbose) errs() << "[RUN_CFF] overriding plugin path from RUN_CFF_PLUGIN: " << PluginToLoad << "\n";
   } else {
-    errs() << "[RUN_CFF] loading plugin: " << PluginToLoad << "\n";
+    if (Verbose) errs() << "[RUN_CFF] loading plugin: " << PluginToLoad << "\n";
   }
 
   auto LoadRes = llvm::PassPlugin::Load(PluginToLoad);
@@ -40,7 +43,7 @@ int main(int argc, char **argv) {
     errs() << "[RUN_CFF] Failed to load plugin: " << llvm::toString(LoadRes.takeError()) << "\n";
     return 1;
   }
-  errs() << "[RUN_CFF] plugin loaded successfully\n";
+  if (Verbose) errs() << "[RUN_CFF] plugin loaded successfully\n";
 
   PassBuilder PB;
 
@@ -63,8 +66,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  errs() << "[RUN_CFF] running pipeline...\n";
+  if (Verbose) errs() << "[RUN_CFF] running pipeline...\n";
   MPM.run(*M, MAM);
-  errs() << "[RUN_CFF] done\n";
+  if (Verbose) errs() << "[RUN_CFF] done\n";
   return 0;
 }

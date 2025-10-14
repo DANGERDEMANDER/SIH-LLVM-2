@@ -21,6 +21,17 @@ jobs:
         run: cmake --build build -j$(nproc)
       - name: Run tests
         run: cd build && ctest --output-on-failure -j2
+      - name: Package artifacts (linux)
+        run: |
+          mkdir -p build/dist
+          cp build/LLVM_OBFSCALTION.exe build/dist/ || true
+          cp build/libObfPasses.so build/dist/ || true
+          cd build/dist && zip -r ../llvm-obfuscation-linux.zip . || true
+      - name: Upload linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llvm-obfuscation-linux
+          path: build/llvm-obfuscation-linux.zip
 
   windows-build:
     runs-on: windows-latest
@@ -40,9 +51,13 @@ jobs:
         run: |
           cmake --build build --config Release
       - name: Package artifact
+        run: |
+          mkdir -p build\dist
+          copy build\Release\LLVM_OBFSCALTION.exe build\dist\ || echo skip
+          copy build\Release\ObfPasses\libObfPasses.dll build\dist\ || echo skip
+          powershell -Command "Compress-Archive -Path build\dist\* -DestinationPath build\llvm-obfuscation-windows.zip -Force"
+      - name: Upload windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: llvm-obfuscation-windows
-          path: |
-            build\\dist\\LLVM_OBFSCALTION.exe
-            build\\dist\\libObfPasses.dll
+          path: build\llvm-obfuscation-windows.zip
