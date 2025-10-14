@@ -1,6 +1,7 @@
 CMakeFiles/ObfPasses.dir/src/passes/BogusInsertPass.cpp.o: \
  /home/aditya/llvm_obfuscation/src/passes/BogusInsertPass.cpp \
  /usr/include/stdc-predef.h \
+ /home/aditya/llvm_obfuscation/src/passes/BogusInsertPass.h \
  /usr/lib/llvm-14/include/llvm/IR/PassManager.h \
  /usr/lib/llvm-14/include/llvm/ADT/DenseMap.h \
  /usr/lib/llvm-14/include/llvm/ADT/DenseMapInfo.h \

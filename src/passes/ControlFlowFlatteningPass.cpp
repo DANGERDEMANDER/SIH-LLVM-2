@@ -1,143 +1,98 @@
-// ControlFlowFlatteningPass.cpp
-// Converts function control flow into a switch-based dispatch loop.
-// Security: Disrupts static analysis by making all blocks appear to be possible
-// successors of each other, while preserving original semantics.
-
-#include "llvm/IR/PassManager.h"
+#include "ControlFlowFlatteningPass.h" // Use the header for the declaration
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
-
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include <random>
-#include <unordered_map>
+#include <vector>
 
 using namespace llvm;
 
-// Library-load debug: prints when the plugin is dlopen'd. This helps verify
-// whether opt actually loads the shared object and runs static init.
-static void plugin_load_debug() __attribute__((constructor));
-static void plugin_load_debug() {
-  errs() << "[CFF_PLUGIN] plugin constructor called\n";
-}
-// (registration function moved below where ControlFlowFlatteningPass is defined)
+// NOTE: The incorrect 'namespace llvm { ... }' wrapper has been removed.
+// The implementation is now in the global namespace, matching the header.
 
-namespace {
+PreservedAnalyses ControlFlowFlatteningPass::run(Function &F, FunctionAnalysisManager &AM) {
+    if (F.isDeclaration() || F.empty() || F.size() <= 2) {
+        return PreservedAnalyses::all();
+    }
 
-class ControlFlowFlatteningPass : public PassInfoMixin<ControlFlowFlatteningPass> {
-  uint32_t Seed_{0x12345678};
-  unsigned NumFlattened_{0};
-
-public:
-  ControlFlowFlatteningPass() {
-    if (const char *env = std::getenv("LLVM_OBF_SEED"))
-      try {
-        Seed_ = static_cast<uint32_t>(std::stoul(std::string(env)));
-      } catch (...) {}
-  }
-
-  PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
-    if (F.isDeclaration() || F.size() < 3)
-      return PreservedAnalyses::all();
+    std::vector<BasicBlock*> origBBs;
+    for (BasicBlock &BB : F) {
+        origBBs.push_back(&BB);
+    }
+    
+    BasicBlock *entryBlock = &F.getEntryBlock();
+    origBBs.erase(std::remove(origBBs.begin(), origBBs.end(), entryBlock), origBBs.end());
+    
+    // Detach all original blocks from the function, except the entry block.
+    for (BasicBlock *BB : origBBs) {
+        BB->removeFromParent();
+    }
 
     LLVMContext &Ctx = F.getContext();
-    std::mt19937 RNG(Seed_);
+    BasicBlock *dispatchBlock = BasicBlock::Create(Ctx, "dispatch", &F);
+    BasicBlock *returnBlock = BasicBlock::Create(Ctx, "returnBlock", &F);
 
-    // Create state variables at function entry
-  IRBuilder<> Builder(&*F.begin());
-  IntegerType *I32Ty = Type::getInt32Ty(Ctx);
-    AllocaInst *StateVar = Builder.CreateAlloca(I32Ty, nullptr, "cff.state");
-    
-    // Map each original block to a unique state value
-    std::unordered_map<BasicBlock*, uint32_t> BlockToState;
-    uint32_t NextState = 1;
-    for (BasicBlock &BB : F) {
-      if (&BB == &F.getEntryBlock())
-        BlockToState[&BB] = 0;
-      else
-        BlockToState[&BB] = NextState++;
-    }
+    // Setup the entry block to initialize the state and jump to the dispatcher
+    entryBlock->getTerminator()->eraseFromParent();
+    IRBuilder<> builder(entryBlock);
+    AllocaInst *stateVar = builder.CreateAlloca(builder.getInt32Ty(), nullptr, "cff_state");
+    builder.CreateStore(builder.getInt32(1), stateVar); // Start with state 1
+    builder.CreateBr(dispatchBlock);
 
-    // Create dispatch block that will contain the switch
-    BasicBlock *DispatchBB = BasicBlock::Create(
-        Ctx, "cff.dispatch", &F, &F.getEntryBlock());
-    
-    // Move all blocks except entry after dispatch
-    for (auto &BB : F) {
-      if (&BB != &F.getEntryBlock() && &BB != DispatchBB) {
-        BB.moveAfter(DispatchBB);
-      }
-    }
+    // Create the dispatcher's switch statement
+    builder.SetInsertPoint(dispatchBlock);
+    LoadInst *loadState = builder.CreateLoad(builder.getInt32Ty(), stateVar, "load_cff_state");
+    SwitchInst *switcher = builder.CreateSwitch(loadState, returnBlock, origBBs.size());
 
-    // Create switch in dispatch block
-    Builder.SetInsertPoint(DispatchBB);
-    LoadInst *CurrentState = Builder.CreateLoad(I32Ty, StateVar, "cff.current");
-    SwitchInst *Dispatcher = Builder.CreateSwitch(
-        CurrentState, &F.getEntryBlock(), BlockToState.size());
+    // Re-wire all original blocks to work with the dispatcher
+    for (size_t i = 0; i < origBBs.size(); ++i) {
+        BasicBlock *BB = origBBs[i];
+        F.getBasicBlockList().push_back(BB); 
+        switcher->addCase(builder.getInt32(i + 1), BB);
 
-    // Process each block: redirect terminators to dispatch block
-    for (auto &BB : F) {
-      if (&BB == DispatchBB)
-        continue;
+        Instruction *terminator = BB->getTerminator();
+        if (isa<ReturnInst>(terminator)) {
+            builder.SetInsertPoint(terminator);
+            builder.CreateStore(builder.getInt32(0), stateVar); // State 0 can mean "exit"
+            builder.CreateBr(returnBlock); // Jump to the common return block
+            terminator->eraseFromParent();
+        } else if (BranchInst *br = dyn_cast<BranchInst>(terminator)) {
+            builder.SetInsertPoint(br);
+            
+            auto find_idx = [&](BasicBlock* target) {
+                for(size_t j = 0; j < origBBs.size(); ++j) {
+                    if(origBBs[j] == target) return (uint32_t)j + 1;
+                }
+                // It might branch back to the entry, which is not in our list. Handle that case.
+                if(target == entryBlock) return (uint32_t)1;
+                return (uint32_t)0; // Default/exit state
+            };
 
-  // Add this block as a switch case
-  ConstantInt *CaseVal = ConstantInt::get(I32Ty, BlockToState[&BB]);
-      Dispatcher->addCase(CaseVal, &BB);
-
-      // Get terminator
-      Instruction *Term = BB.getTerminator();
-      if (BranchInst *BI = dyn_cast<BranchInst>(Term)) {
-        Builder.SetInsertPoint(Term);
-
-        if (BI->isConditional()) {
-          // Convert conditional branch to state update + jump to dispatch
-          Value *Cond = BI->getCondition();
-          Value *TrueState = ConstantInt::get(
-              I32Ty, BlockToState[BI->getSuccessor(0)]);
-          Value *FalseState = ConstantInt::get(
-              I32Ty, BlockToState[BI->getSuccessor(1)]);
-          Value *NextState = Builder.CreateSelect(
-              Cond, TrueState, FalseState, "cff.next");
-          Builder.CreateStore(NextState, StateVar);
-          Builder.CreateBr(DispatchBB);
-        } else if (BI->isUnconditional() && 
-                   BI->getSuccessor(0) != DispatchBB) {
-          // Convert unconditional branch to state update + jump to dispatch
-          Value *NextState = ConstantInt::get(
-              I32Ty, BlockToState[BI->getSuccessor(0)]);
-          Builder.CreateStore(NextState, StateVar);
-          Builder.CreateBr(DispatchBB);
+            if (br->isConditional()) {
+                Value* trueState = builder.getInt32(find_idx(br->getSuccessor(0)));
+                Value* falseState = builder.getInt32(find_idx(br->getSuccessor(1)));
+                Value* nextState = builder.CreateSelect(br->getCondition(), trueState, falseState);
+                builder.CreateStore(nextState, stateVar);
+            } else {
+                builder.CreateStore(builder.getInt32(find_idx(br->getSuccessor(0))), stateVar);
+            }
+            builder.CreateBr(dispatchBlock); // Always go back to the dispatcher
+            terminator->eraseFromParent();
         }
-        
-        // Remove old terminator
-        Term->eraseFromParent();
-      }
+    }
+    
+    // If the switch gets an unknown state, go to the return block
+    switcher->setDefaultDest(returnBlock);
+    builder.SetInsertPoint(returnBlock);
+    if (F.getReturnType()->isVoidTy()) {
+        builder.CreateRetVoid();
+    } else {
+        // Return a default/undefined value if the function should return something
+        builder.CreateRet(UndefValue::get(F.getReturnType()));
     }
 
-    // Initialize state to 0 (entry block) in the entry block
-    Builder.SetInsertPoint(&F.getEntryBlock().front());
-    Builder.CreateStore(ConstantInt::get(I32Ty, 0), StateVar);
-
-    ++NumFlattened_;
     return PreservedAnalyses::none();
-  }
-};
-
-} // end anonymous namespace
-
-// (registration function above)
-
-// Expose registration for programmatic driver
-void registerCFFPass(llvm::PassBuilder &PB) {
-  PB.registerPipelineParsingCallback(
-    [](llvm::StringRef Name, llvm::ModulePassManager &MPM, llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-      if (Name == "cff" || Name == "control-flow-flattening") {
-        MPM.addPass(llvm::createModuleToFunctionPassAdaptor(ControlFlowFlatteningPass()));
-        return true;
-      }
-      return false;
-    });
 }

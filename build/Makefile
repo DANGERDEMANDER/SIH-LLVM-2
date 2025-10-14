@@ -326,6 +326,30 @@ src/passes/StringObfPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.s
 .PHONY : src/passes/StringObfPass.cpp.s
 
+src/passes/passes.o: src/passes/passes.cpp.o
+.PHONY : src/passes/passes.o
+
+# target to build an object file
+src/passes/passes.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.o
+.PHONY : src/passes/passes.cpp.o
+
+src/passes/passes.i: src/passes/passes.cpp.i
+.PHONY : src/passes/passes.i
+
+# target to preprocess a source file
+src/passes/passes.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.i
+.PHONY : src/passes/passes.cpp.i
+
+src/passes/passes.s: src/passes/passes.cpp.s
+.PHONY : src/passes/passes.s
+
+# target to generate assembly for a file
+src/passes/passes.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.s
+.PHONY : src/passes/passes.cpp.s
+
 tools/inproc_obf.o: tools/inproc_obf.cpp.o
 .PHONY : tools/inproc_obf.o
 
@@ -427,6 +451,9 @@ help:
 	@echo "... src/passes/StringObfPass.o"
 	@echo "... src/passes/StringObfPass.i"
 	@echo "... src/passes/StringObfPass.s"
+	@echo "... src/passes/passes.o"
+	@echo "... src/passes/passes.i"
+	@echo "... src/passes/passes.s"
 	@echo "... tools/inproc_obf.o"
 	@echo "... tools/inproc_obf.i"
 	@echo "... tools/inproc_obf.s"

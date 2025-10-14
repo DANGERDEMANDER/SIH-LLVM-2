@@ -1,6 +1,7 @@
 CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o: \
  /home/aditya/llvm_obfuscation/src/passes/ControlFlowFlatteningPass.cpp \
  /usr/include/stdc-predef.h \
+ /home/aditya/llvm_obfuscation/src/passes/ControlFlowFlatteningPass.h \
  /usr/lib/llvm-14/include/llvm/IR/PassManager.h \
  /usr/lib/llvm-14/include/llvm/ADT/DenseMap.h \
  /usr/lib/llvm-14/include/llvm/ADT/DenseMapInfo.h \
@@ -358,13 +359,11 @@ CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o: \
  /usr/lib/llvm-14/include/llvm/IR/IntrinsicEnums.inc \
  /usr/lib/llvm-14/include/llvm/IR/Operator.h \
  /usr/lib/llvm-14/include/llvm/IR/ValueHandle.h \
- /usr/lib/llvm-14/include/llvm/Passes/PassBuilder.h \
- /usr/lib/llvm-14/include/llvm/Analysis/CGSCCPassManager.h \
- /usr/lib/llvm-14/include/llvm/ADT/PriorityWorklist.h \
- /usr/lib/llvm-14/include/llvm/Analysis/LazyCallGraph.h \
+ /usr/lib/llvm-14/include/llvm/Transforms/Utils/BasicBlockUtils.h \
  /usr/lib/llvm-14/include/llvm/ADT/SetVector.h \
- /usr/lib/llvm-14/include/llvm/Analysis/TargetLibraryInfo.h \
- /usr/lib/llvm-14/include/llvm/ADT/BitVector.h \
+ /usr/lib/llvm-14/include/llvm/Analysis/DomTreeUpdater.h \
+ /usr/lib/llvm-14/include/llvm/IR/Dominators.h \
+ /usr/lib/llvm-14/include/llvm/ADT/DepthFirstIterator.h \
  /usr/lib/llvm-14/include/llvm/Pass.h \
  /usr/lib/llvm-14/include/llvm/PassAnalysisSupport.h \
  /usr/lib/llvm-14/include/llvm/PassSupport.h \
@@ -372,44 +371,12 @@ CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o: \
  /usr/lib/llvm-14/include/llvm/PassRegistry.h \
  /usr/lib/llvm-14/include/llvm/Support/RWMutex.h \
  /usr/lib/llvm-14/include/llvm/Support/Threading.h \
+ /usr/lib/llvm-14/include/llvm/ADT/BitVector.h \
  /usr/include/c++/11/ciso646 /usr/include/c++/11/mutex \
  /usr/include/c++/11/chrono /usr/include/c++/11/ratio \
  /usr/include/c++/11/ctime /usr/include/c++/11/bits/parse_numbers.h \
  /usr/include/c++/11/bits/std_mutex.h \
  /usr/include/c++/11/bits/unique_lock.h /usr/include/c++/11/shared_mutex \
- /usr/lib/llvm-14/include/llvm/Analysis/TargetLibraryInfo.def \
- /usr/lib/llvm-14/include/llvm/Support/Allocator.h \
- /usr/lib/llvm-14/include/llvm/IR/InstIterator.h \
- /usr/lib/llvm-14/include/llvm/Passes/OptimizationLevel.h \
- /usr/lib/llvm-14/include/llvm/Support/PGOOptions.h \
- /usr/lib/llvm-14/include/llvm/Transforms/IPO/Inliner.h \
- /usr/lib/llvm-14/include/llvm/Analysis/CallGraphSCCPass.h \
- /usr/lib/llvm-14/include/llvm/Analysis/InlineAdvisor.h \
- /usr/lib/llvm-14/include/llvm/Analysis/InlineCost.h \
- /usr/lib/llvm-14/include/llvm/Analysis/AssumptionCache.h \
- /usr/lib/llvm-14/include/llvm/Analysis/InlineModelFeatureMaps.h \
- /usr/lib/llvm-14/include/llvm/Analysis/OptimizationRemarkEmitter.h \
- /usr/lib/llvm-14/include/llvm/Analysis/BlockFrequencyInfo.h \
- /usr/lib/llvm-14/include/llvm/Support/BlockFrequency.h \
- /usr/lib/llvm-14/include/llvm/IR/DiagnosticInfo.h \
- /usr/lib/llvm-14/include/llvm/Support/SourceMgr.h \
- /usr/lib/llvm-14/include/llvm/Support/MemoryBuffer.h \
- /usr/lib/llvm-14/include/llvm/Support/MemoryBufferRef.h \
- /usr/lib/llvm-14/include/llvm/Support/SMLoc.h \
- /usr/lib/llvm-14/include/llvm/Analysis/Utils/ImportedFunctionsInliningStatistics.h \
- /usr/include/c++/11/unordered_set \
- /usr/include/c++/11/bits/unordered_set.h \
- /usr/lib/llvm-14/include/llvm/Transforms/IPO/ModuleInliner.h \
- /usr/lib/llvm-14/include/llvm/Analysis/ReplayInlineAdvisor.h \
- /usr/lib/llvm-14/include/llvm/ADT/StringSet.h \
- /usr/lib/llvm-14/include/llvm/Transforms/Instrumentation.h \
- /usr/lib/llvm-14/include/llvm/Transforms/Scalar/LoopPassManager.h \
- /usr/lib/llvm-14/include/llvm/Analysis/LoopAnalysisManager.h \
- /usr/lib/llvm-14/include/llvm/ADT/PostOrderIterator.h \
- /usr/lib/llvm-14/include/llvm/Analysis/LoopInfo.h \
- /usr/lib/llvm-14/include/llvm/Analysis/LoopNestAnalysis.h \
- /usr/lib/llvm-14/include/llvm/IR/Dominators.h \
- /usr/lib/llvm-14/include/llvm/ADT/DepthFirstIterator.h \
  /usr/lib/llvm-14/include/llvm/Support/CFGDiff.h \
  /usr/lib/llvm-14/include/llvm/Support/CFGUpdate.h \
  /usr/lib/llvm-14/include/llvm/Support/GenericDomTree.h \
@@ -417,21 +384,10 @@ CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o: \
  /usr/include/c++/11/queue /usr/include/c++/11/deque \
  /usr/include/c++/11/bits/stl_deque.h /usr/include/c++/11/bits/deque.tcc \
  /usr/include/c++/11/bits/stl_queue.h \
- /usr/lib/llvm-14/include/llvm/Transforms/Utils/LCSSA.h \
- /usr/lib/llvm-14/include/llvm/Transforms/Utils/LoopSimplify.h \
- /usr/lib/llvm-14/include/llvm/Transforms/Utils/LoopUtils.h \
- /usr/lib/llvm-14/include/llvm/Analysis/IVDescriptors.h \
- /usr/lib/llvm-14/include/llvm/IR/IntrinsicInst.h \
- /usr/lib/llvm-14/include/llvm/Analysis/TargetTransformInfo.h \
- /usr/lib/llvm-14/include/llvm/Support/BranchProbability.h \
- /usr/include/c++/11/numeric /usr/include/c++/11/bits/stl_numeric.h \
- /usr/include/c++/11/pstl/glue_numeric_defs.h \
- /usr/lib/llvm-14/include/llvm/Support/InstructionCost.h \
- /usr/lib/llvm-14/include/llvm/Transforms/Utils/ValueMapper.h \
- /usr/lib/llvm-14/include/llvm/IR/ValueMap.h \
- /usr/lib/llvm-14/include/llvm/Support/Mutex.h \
- /usr/lib/llvm-14/include/llvm/Passes/PassPlugin.h \
- /usr/lib/llvm-14/include/llvm/Support/DynamicLibrary.h \
+ /usr/lib/llvm-14/include/llvm/Analysis/LoopInfo.h \
+ /usr/lib/llvm-14/include/llvm/Support/Allocator.h \
  /usr/include/c++/11/random /usr/include/c++/11/bits/random.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/opt_random.h \
- /usr/include/c++/11/bits/random.tcc
+ /usr/include/c++/11/bits/random.tcc /usr/include/c++/11/numeric \
+ /usr/include/c++/11/bits/stl_numeric.h \
+ /usr/include/c++/11/pstl/glue_numeric_defs.h

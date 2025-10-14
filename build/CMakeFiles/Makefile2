@@ -170,12 +170,12 @@ CMakeFiles/acc_gen.dir/clean:
 CMakeFiles/ObfPasses.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=1,2,3,4,5 "Built target ObfPasses"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=1,2,3,4,5,6 "Built target ObfPasses"
 .PHONY : CMakeFiles/ObfPasses.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/ObfPasses.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/aditya/llvm_obfuscation/build/CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/aditya/llvm_obfuscation/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ObfPasses.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/aditya/llvm_obfuscation/build/CMakeFiles 0
 .PHONY : CMakeFiles/ObfPasses.dir/rule
@@ -196,7 +196,7 @@ CMakeFiles/ObfPasses.dir/clean:
 CMakeFiles/obfuscator.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/obfuscator.dir/build.make CMakeFiles/obfuscator.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/obfuscator.dir/build.make CMakeFiles/obfuscator.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=8,9 "Built target obfuscator"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=9,10 "Built target obfuscator"
 .PHONY : CMakeFiles/obfuscator.dir/all
 
 # Build rule for subdir invocation for target.
@@ -222,7 +222,7 @@ CMakeFiles/obfuscator.dir/clean:
 CMakeFiles/run_cff.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/run_cff.dir/build.make CMakeFiles/run_cff.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/run_cff.dir/build.make CMakeFiles/run_cff.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=11,12 "Built target run_cff"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=12,13 "Built target run_cff"
 .PHONY : CMakeFiles/run_cff.dir/all
 
 # Build rule for subdir invocation for target.
@@ -248,7 +248,7 @@ CMakeFiles/run_cff.dir/clean:
 CMakeFiles/inproc_obf.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/inproc_obf.dir/build.make CMakeFiles/inproc_obf.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/inproc_obf.dir/build.make CMakeFiles/inproc_obf.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=6,7 "Built target inproc_obf"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=7,8 "Built target inproc_obf"
 .PHONY : CMakeFiles/inproc_obf.dir/all
 
 # Build rule for subdir invocation for target.
@@ -271,15 +271,16 @@ CMakeFiles/inproc_obf.dir/clean:
 # Target rules for target CMakeFiles/package_llvm_obfuscation.dir
 
 # All Build rule for target.
-CMakeFiles/package_llvm_obfuscation.dir/all:
+CMakeFiles/package_llvm_obfuscation.dir/all: CMakeFiles/ObfPasses.dir/all
+CMakeFiles/package_llvm_obfuscation.dir/all: CMakeFiles/obfuscator.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/package_llvm_obfuscation.dir/build.make CMakeFiles/package_llvm_obfuscation.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/package_llvm_obfuscation.dir/build.make CMakeFiles/package_llvm_obfuscation.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=10 "Built target package_llvm_obfuscation"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/aditya/llvm_obfuscation/build/CMakeFiles --progress-num=11 "Built target package_llvm_obfuscation"
 .PHONY : CMakeFiles/package_llvm_obfuscation.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/package_llvm_obfuscation.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/aditya/llvm_obfuscation/build/CMakeFiles 1
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/aditya/llvm_obfuscation/build/CMakeFiles 9
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/package_llvm_obfuscation.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/aditya/llvm_obfuscation/build/CMakeFiles 0
 .PHONY : CMakeFiles/package_llvm_obfuscation.dir/rule

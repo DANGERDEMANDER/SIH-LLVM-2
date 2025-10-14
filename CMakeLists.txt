@@ -14,8 +14,12 @@ add_library(ObfPasses MODULE
     src/passes/StringObfPass.cpp
     src/passes/BogusInsertPass.cpp
     src/passes/ControlFlowFlatteningPass.cpp
-  src/passes/FakeLoopPass.cpp
+    src/passes/FakeLoopPass.cpp
+    src/passes/passes.cpp
 )
+
+# This line tells CMake where to find your new .h files
+target_include_directories(ObfPasses PRIVATE src)
 
 if(WIN32)
   set(PLUG_SUFFIX ".dll")
@@ -90,3 +94,5 @@ add_custom_target(package_llvm_obfuscation ALL
   COMMENT "Packaging LLVM_OBFSCALTION.exe and plugin into build/dist"
 )
 
+# This line fixes the parallel build race condition
+add_dependencies(package_llvm_obfuscation obfuscator ObfPasses)

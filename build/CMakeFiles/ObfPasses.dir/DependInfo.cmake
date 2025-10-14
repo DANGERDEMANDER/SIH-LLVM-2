@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/aditya/llvm_obfuscation/src/passes/ControlFlowFlatteningPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o.d"
   "/home/aditya/llvm_obfuscation/src/passes/FakeLoopPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.o.d"
   "/home/aditya/llvm_obfuscation/src/passes/StringObfPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.o.d"
+  "/home/aditya/llvm_obfuscation/src/passes/passes.cpp" "CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.o.d"
   )
 
 # Targets to which this target links.

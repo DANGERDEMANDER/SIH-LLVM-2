@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -DObfPasses_EXPORTS
 
-CXX_INCLUDES = -I/usr/lib/llvm-14/include
+CXX_INCLUDES = -I/usr/lib/llvm-14/include -I/home/aditya/llvm_obfuscation/src
 
 CXX_FLAGS = -O3 -DNDEBUG -fPIC   -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 

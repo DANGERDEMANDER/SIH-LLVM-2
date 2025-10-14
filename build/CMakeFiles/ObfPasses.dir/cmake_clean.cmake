@@ -7,6 +7,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.o.d"
   "CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.o"
   "CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.o.d"
+  "CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.o"
+  "CMakeFiles/ObfPasses.dir/src/passes/passes.cpp.o.d"
   "libObfPasses.pdb"
   "libObfPasses.so"
 )
