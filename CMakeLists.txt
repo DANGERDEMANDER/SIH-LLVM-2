@@ -14,6 +14,7 @@ add_library(ObfPasses MODULE
     src/passes/StringObfPass.cpp
     src/passes/BogusInsertPass.cpp
     src/passes/ControlFlowFlatteningPass.cpp
+  src/passes/FakeLoopPass.cpp
 )
 
 if(WIN32)
@@ -62,6 +63,13 @@ set_target_properties(run_cff PROPERTIES
 set_target_properties(run_cff PROPERTIES ENABLE_EXPORTS ON)
 llvm_map_components_to_libnames(run_cff_libs support core irreader passes analysis)
 target_link_libraries(run_cff PRIVATE ${run_cff_libs})
+
+# In-process obfuscation runner (dlopen + register_all_obf_passes + run pipeline)
+add_executable(inproc_obf tools/inproc_obf.cpp)
+set_target_properties(inproc_obf PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tools
+)
+target_link_libraries(inproc_obf PRIVATE ${run_cff_libs})
 
 enable_testing()
 

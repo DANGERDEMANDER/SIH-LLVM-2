@@ -8,9 +8,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
-
-#include <cstdint>
-#include <cstdlib>
 #include <string>
 #include <random>
 
@@ -111,18 +108,11 @@ public:
 
 } // end anonymous namespace
 
-extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
-llvmGetPassPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "bogus-insert-pass", "v0.2",
-          [](llvm::PassBuilder &PB) {
-            PB.registerPipelineParsingCallback(
-                [](llvm::StringRef Name, llvm::ModulePassManager &MPM,
-                   llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                  if (Name == "bogus-insert") {
-                    MPM.addPass(BogusInsertPass());
-                    return true;
-                  }
-                  return false;
-                });
-          }};
+// Expose a registration function for programmatic linking (driver)
+void registerBogusInsertPass(llvm::PassBuilder &PB) {
+  PB.registerPipelineParsingCallback(
+    [](llvm::StringRef Name, llvm::ModulePassManager &MPM, llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+      if (Name == "bogus-insert") { MPM.addPass(BogusInsertPass()); return true; }
+      return false;
+    });
 }

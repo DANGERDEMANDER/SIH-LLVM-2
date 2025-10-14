@@ -23,6 +23,7 @@ static void plugin_load_debug() __attribute__((constructor));
 static void plugin_load_debug() {
   errs() << "[CFF_PLUGIN] plugin constructor called\n";
 }
+// (registration function moved below where ControlFlowFlatteningPass is defined)
 
 namespace {
 
@@ -127,25 +128,16 @@ public:
 
 } // end anonymous namespace
 
-extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
-llvmGetPassPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "control-flow-flattening", "v0.1",
-          [](PassBuilder &PB) {
-            errs() << "[CFF] registering callbacks\n";
-            // Register a single module-level pipeline element 'cff'. This is
-            // the canonical pattern used by LLVM's new PM examples: when the
-            // parser sees -passes="cff" it will invoke this callback and we
-            // adapt the function pass into the module pipeline.
-            PB.registerPipelineParsingCallback(
-              [](StringRef Name, ModulePassManager &MPM,
-                 ArrayRef<PassBuilder::PipelineElement> Elements) {
-                errs() << "[CFF] module-callback: received Name='" << Name << "'\n";
-                if (Name == "cff") {
-                  errs() << "[CFF] module-callback: registering module adapter for '" << Name << "'\n";
-                  MPM.addPass(createModuleToFunctionPassAdaptor(ControlFlowFlatteningPass()));
-                  return true;
-                }
-                return false;
-              });
-          }};
+// (registration function above)
+
+// Expose registration for programmatic driver
+void registerCFFPass(llvm::PassBuilder &PB) {
+  PB.registerPipelineParsingCallback(
+    [](llvm::StringRef Name, llvm::ModulePassManager &MPM, llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+      if (Name == "cff" || Name == "control-flow-flattening") {
+        MPM.addPass(llvm::createModuleToFunctionPassAdaptor(ControlFlowFlatteningPass()));
+        return true;
+      }
+      return false;
+    });
 }

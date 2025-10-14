@@ -65,5 +65,6 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/ObfPasses.dir/DependInfo.cmake"
   "CMakeFiles/obfuscator.dir/DependInfo.cmake"
   "CMakeFiles/run_cff.dir/DependInfo.cmake"
+  "CMakeFiles/inproc_obf.dir/DependInfo.cmake"
   "CMakeFiles/package_llvm_obfuscation.dir/DependInfo.cmake"
   )

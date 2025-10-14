@@ -205,6 +205,19 @@ run_cff/fast:
 .PHONY : run_cff/fast
 
 #=============================================================================
+# Target rules for targets named inproc_obf
+
+# Build rule for target.
+inproc_obf: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 inproc_obf
+.PHONY : inproc_obf
+
+# fast build rule for target.
+inproc_obf/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/inproc_obf.dir/build.make CMakeFiles/inproc_obf.dir/build
+.PHONY : inproc_obf/fast
+
+#=============================================================================
 # Target rules for targets named package_llvm_obfuscation
 
 # Build rule for target.
@@ -265,6 +278,30 @@ src/passes/ControlFlowFlatteningPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.s
 .PHONY : src/passes/ControlFlowFlatteningPass.cpp.s
 
+src/passes/FakeLoopPass.o: src/passes/FakeLoopPass.cpp.o
+.PHONY : src/passes/FakeLoopPass.o
+
+# target to build an object file
+src/passes/FakeLoopPass.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.o
+.PHONY : src/passes/FakeLoopPass.cpp.o
+
+src/passes/FakeLoopPass.i: src/passes/FakeLoopPass.cpp.i
+.PHONY : src/passes/FakeLoopPass.i
+
+# target to preprocess a source file
+src/passes/FakeLoopPass.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.i
+.PHONY : src/passes/FakeLoopPass.cpp.i
+
+src/passes/FakeLoopPass.s: src/passes/FakeLoopPass.cpp.s
+.PHONY : src/passes/FakeLoopPass.s
+
+# target to generate assembly for a file
+src/passes/FakeLoopPass.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.s
+.PHONY : src/passes/FakeLoopPass.cpp.s
+
 src/passes/StringObfPass.o: src/passes/StringObfPass.cpp.o
 .PHONY : src/passes/StringObfPass.o
 
@@ -288,6 +325,30 @@ src/passes/StringObfPass.s: src/passes/StringObfPass.cpp.s
 src/passes/StringObfPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ObfPasses.dir/build.make CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.s
 .PHONY : src/passes/StringObfPass.cpp.s
+
+tools/inproc_obf.o: tools/inproc_obf.cpp.o
+.PHONY : tools/inproc_obf.o
+
+# target to build an object file
+tools/inproc_obf.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/inproc_obf.dir/build.make CMakeFiles/inproc_obf.dir/tools/inproc_obf.cpp.o
+.PHONY : tools/inproc_obf.cpp.o
+
+tools/inproc_obf.i: tools/inproc_obf.cpp.i
+.PHONY : tools/inproc_obf.i
+
+# target to preprocess a source file
+tools/inproc_obf.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/inproc_obf.dir/build.make CMakeFiles/inproc_obf.dir/tools/inproc_obf.cpp.i
+.PHONY : tools/inproc_obf.cpp.i
+
+tools/inproc_obf.s: tools/inproc_obf.cpp.s
+.PHONY : tools/inproc_obf.s
+
+# target to generate assembly for a file
+tools/inproc_obf.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/inproc_obf.dir/build.make CMakeFiles/inproc_obf.dir/tools/inproc_obf.cpp.s
+.PHONY : tools/inproc_obf.cpp.s
 
 tools/obfus_cli.o: tools/obfus_cli.cpp.o
 .PHONY : tools/obfus_cli.o
@@ -351,6 +412,7 @@ help:
 	@echo "... omp_gen"
 	@echo "... package_llvm_obfuscation"
 	@echo "... ObfPasses"
+	@echo "... inproc_obf"
 	@echo "... obfuscator"
 	@echo "... run_cff"
 	@echo "... src/passes/BogusInsertPass.o"
@@ -359,9 +421,15 @@ help:
 	@echo "... src/passes/ControlFlowFlatteningPass.o"
 	@echo "... src/passes/ControlFlowFlatteningPass.i"
 	@echo "... src/passes/ControlFlowFlatteningPass.s"
+	@echo "... src/passes/FakeLoopPass.o"
+	@echo "... src/passes/FakeLoopPass.i"
+	@echo "... src/passes/FakeLoopPass.s"
 	@echo "... src/passes/StringObfPass.o"
 	@echo "... src/passes/StringObfPass.i"
 	@echo "... src/passes/StringObfPass.s"
+	@echo "... tools/inproc_obf.o"
+	@echo "... tools/inproc_obf.i"
+	@echo "... tools/inproc_obf.s"
 	@echo "... tools/obfus_cli.o"
 	@echo "... tools/obfus_cli.i"
 	@echo "... tools/obfus_cli.s"

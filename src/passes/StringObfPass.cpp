@@ -75,13 +75,11 @@ public:
   }
 };
 }
-extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo llvmGetPassPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "string-obf-pass", "v1",
-    [](PassBuilder &PB) {
-      PB.registerPipelineParsingCallback(
-        [](StringRef Name, ModulePassManager &MPM, ArrayRef<PassBuilder::PipelineElement>) {
-          if (Name == "string-obf") { MPM.addPass(StringObfPass()); return true; }
-          return false;
-        });
-    }};
+// Expose a registration function for programmatic linking (driver)
+void registerStringObfPass(llvm::PassBuilder &PB) {
+  PB.registerPipelineParsingCallback(
+    [](llvm::StringRef Name, llvm::ModulePassManager &MPM, llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+      if (Name == "string-obf") { MPM.addPass(StringObfPass()); return true; }
+      return false;
+    });
 }

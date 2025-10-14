@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/aditya/llvm_obfuscation/src/passes/BogusInsertPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/BogusInsertPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/BogusInsertPass.cpp.o.d"
   "/home/aditya/llvm_obfuscation/src/passes/ControlFlowFlatteningPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/ControlFlowFlatteningPass.cpp.o.d"
+  "/home/aditya/llvm_obfuscation/src/passes/FakeLoopPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/FakeLoopPass.cpp.o.d"
   "/home/aditya/llvm_obfuscation/src/passes/StringObfPass.cpp" "CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.o" "gcc" "CMakeFiles/ObfPasses.dir/src/passes/StringObfPass.cpp.o.d"
   )
 
