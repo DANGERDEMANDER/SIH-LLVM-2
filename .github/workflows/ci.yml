@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential lld llvm-14 llvm-14-dev llvm-14-tools clang-14
+      - name: Configure
+        run: cmake -S . -B build -DLLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build -j$(nproc)
+      - name: Run tests
+        run: cd build && ctest --output-on-failure -j2
+
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Chocolatey packages (LLVM, CMake)
+        run: |
+          choco install -y llvm --version=14.0.0
+          choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System' --version=3.22.1
+      - name: Configure (MSVC)
+        shell: powershell
+        run: |
+          $env:Path = "C:\\Program Files\\CMake\\bin;" + $env:Path
+          cmake -S . -B build -G "MSBuild" -DLLVM_DIR="C:\\Program Files\\LLVM\\lib\\cmake\\llvm" -DCMAKE_BUILD_TYPE=Release
+      - name: Build (MSVC)
+        shell: powershell
+        run: |
+          cmake --build build --config Release
+      - name: Package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llvm-obfuscation-windows
+          path: |
+            build\\dist\\LLVM_OBFSCALTION.exe
+            build\\dist\\libObfPasses.dll

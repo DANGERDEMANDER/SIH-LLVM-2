@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    {
+      "name": "WSL-Linux-Clang-LLVM14",
+      "compilerPath": "/usr/bin/clang++",
+      "intelliSenseMode": "linux-clang-x64",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/usr/include",
+        "/usr/include/x86_64-linux-gnu",
+        "/usr/lib/llvm-14/include",
+        "/usr/lib/llvm-14/include/.."
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "/usr/lib/llvm-14/include",
+          "/usr/include"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ],
+  "version": 4
+}
