@@ -2,14 +2,15 @@
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
 
-// Include your custom pass headers here
+// Include all your custom pass headers here
 #include "StringObfPass.h"
 #include "BogusInsertPass.h"
 #include "ControlFlowFlatteningPass.h"
+#include "FakeLoopPass.h" // <-- ADD THIS INCLUDE
 
 using namespace llvm;
 
-// ... rest of your code
+// This is now the ONLY file with llvmGetPassPluginInfo
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
     return {
@@ -19,17 +20,23 @@ llvmGetPassPluginInfo() {
                 [](StringRef Name, ModulePassManager &MPM,
                    ArrayRef<PassBuilder::PipelineElement>) {
                     if (Name == "string-obf") {
-                        MPM.addPass(StringObfPass()); // This will now work
+                        MPM.addPass(StringObfPass());
                         return true;
                     }
                     if (Name == "bogus-insert") {
-                        MPM.addPass(BogusInsertPass()); // This will now work
+                        MPM.addPass(BogusInsertPass());
                         return true;
                     }
                     if (Name == "cff") {
-                        MPM.addPass(createModuleToFunctionPassAdaptor(ControlFlowFlatteningPass())); // This will now work
+                        MPM.addPass(createModuleToFunctionPassAdaptor(ControlFlowFlatteningPass()));
                         return true;
                     }
+                    // --- ADD THIS BLOCK TO REGISTER THE FAKE LOOP PASS ---
+                    if (Name == "fake-loop") {
+                        MPM.addPass(createModuleToFunctionPassAdaptor(FakeLoopPass()));
+                        return true;
+                    }
+                    // --- END OF ADDED BLOCK ---
                     return false;
                 }
             );

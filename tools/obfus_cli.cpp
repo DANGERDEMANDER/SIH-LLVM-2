@@ -10,18 +10,16 @@
 #include <ctime>   // For std::time and std::ctime
 #include <random>  // For std::mt19937
 #include <limits>  // Required for std::numeric_limits
-#include <filesystem> // For getting absolute paths
+#include <filesystem> // For getting absolute paths and file size
 #include <iomanip> // For std::setprecision
 
 // --- UI Components ---
-// Cross-platform screen clearing
 #ifdef _WIN32
 #define CLEAR_SCREEN "cls"
 #else
 #define CLEAR_SCREEN "clear"
 #endif
 
-// ANSI escape codes for colors and styles
 namespace Color {
     const std::string RESET = "\033[0m";
     const std::string GREEN = "\033[32m";
@@ -35,8 +33,8 @@ void printHeader(const std::string& title) {
     (void)system(CLEAR_SCREEN);
     std::cout << Color::BOLD << Color::GREEN;
     std::cout << "=========================================================\n";
-    std::cout << "            " << title << "            \n";
-    std::cout << "        Professional Security & Anti-Analysis        \n";
+    std::cout << "                " << title << "                \n";
+    std::cout << "    Professional Security & Anti-Analysis      \n";
     std::cout << "=========================================================\n\n" << Color::RESET;
 }
 
@@ -75,10 +73,12 @@ struct ObfuscationConfig {
     bool stringObfuscation = false;
     bool bogusControlFlow = false;
     bool controlFlowFlattening = false;
+    bool fakeLoops = false;
     int stringObfCycles = 1;
     int bogusControlFlowCycles = 1;
     int bogusControlFlowRatio = 30;
     int flatteningCycles = 1;
+    int fakeLoopCycles = 1;
     uint32_t seed = 0;
     std::string presetName = "Light";
 };
@@ -104,13 +104,10 @@ int getIntegerInput() {
     return value;
 }
 
-// Robustly parses the simple JSON format from the StringObf pass
 void parseAndUpdateStats(const std::string& jsonPath, std::map<std::string, long long>& statsMap) {
     std::ifstream jsonFile(jsonPath);
     if (!jsonFile.is_open()) return;
-    
     std::string content((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
-    
     auto find_and_parse = [&](const std::string& key, const std::string& map_key) {
         size_t pos = content.find("\"" + key + "\"");
         if (pos != std::string::npos) {
@@ -122,7 +119,6 @@ void parseAndUpdateStats(const std::string& jsonPath, std::map<std::string, long
             }
         }
     };
-    
     find_and_parse("num_strings_encrypted", "Encrypted Strings");
     find_and_parse("total_string_bytes", "Encrypted String Bytes");
 }
@@ -137,7 +133,6 @@ bool runCommand(const std::string& command, const std::string& statsFile, std::m
     if(errFile.is_open()) {
         std::string line;
         while (std::getline(errFile, line)) {
-            // Robustly parse `opt -stats` output (e.g., "  7 ... - Number of instructions")
             if (line.find("Number of instructions") != std::string::npos || line.find("Number of basic blocks") != std::string::npos) {
                 std::stringstream ss(line);
                 long long val;
@@ -149,12 +144,16 @@ bool runCommand(const std::string& command, const std::string& statsFile, std::m
                     }
                 }
             }
-
-            // Parse output from BogusInsert pass
             if (line.find("[BogusInsert] inserted ") != std::string::npos) {
                 long long inserts = 0;
                 if(sscanf(line.c_str(), "[BogusInsert] inserted %lld inserts", &inserts) == 1) {
                     passStats["Bogus Blocks Inserted"] += inserts;
+                }
+            }
+            else if (line.find("[FakeLoop] inserted ") != std::string::npos) {
+                long long loops = 0;
+                if(sscanf(line.c_str(), "[FakeLoop] inserted %lld loops", &loops) == 1) {
+                    passStats["Fake Loops Added"] += loops;
                 }
             }
         }
@@ -184,9 +183,7 @@ ObfuscationResult performObfuscation(const std::string& inputSourceFile, const s
 
     const std::string PLUGIN_PATH = "./build/libObfPasses.so";
     const std::string RUNTIME_SRC = "./src/runtime/decryptor.c";
-    const std::string FINAL_IR_FILENAME = "final_obfuscated.ll";
-    
-    // *** FIX: Use version-specific binaries to avoid PATH issues ***
+    const std::string FINAL_IR_FILENAME = "final_readable_ir.ll";
     const std::string CLANG = "clang-14";
     const std::string OPT = "opt-14";
 
@@ -196,13 +193,15 @@ ObfuscationResult performObfuscation(const std::string& inputSourceFile, const s
     printStep("1: Initial Analysis & Compilation");
     progressBar(5, "Compiling to LLVM IR...");
     if (!runCommand(CLANG + " -S -emit-llvm " + inputSourceFile + " -o " + currentIRFile, "", result.stats, result.initialAnalysis)) return result;
+    result.initialAnalysis["Code Size (bytes)"] = std::filesystem::file_size(currentIRFile);
     
     progressBar(10, "Analyzing initial IR...");
-    runCommand(OPT + " -stats -S " + currentIRFile + " -o /dev/null", "", result.stats, result.initialAnalysis);
+    runCommand(OPT + " -p=instcount,basicaa -stats -S " + currentIRFile + " -o /dev/null", "", result.stats, result.initialAnalysis);
 
     int totalSteps = (config.stringObfuscation ? config.stringObfCycles : 0) +
                      (config.bogusControlFlow ? config.bogusControlFlowCycles : 0) +
-                     (config.controlFlowFlattening ? config.flatteningCycles : 0);
+                     (config.controlFlowFlattening ? config.flatteningCycles : 0) +
+                     (config.fakeLoops ? config.fakeLoopCycles : 0);
     if (totalSteps == 0) totalSteps = 1;
     int currentStep = 0;
 
@@ -215,13 +214,10 @@ ObfuscationResult performObfuscation(const std::string& inputSourceFile, const s
         for (int i = 0; i < cycles; ++i) {
             currentStep++;
             progressBar(10 + (80 * currentStep / totalSteps), "Applying " + name + " (" + std::to_string(i + 1) + "/" + std::to_string(cycles) + ")");
-            
             std::string nextIRFile = "temp_" + std::to_string(currentStep) + "_" + flag + ".ll";
             tempFiles.push_back(nextIRFile);
-            
             std::string statsFile = "stats_" + std::to_string(currentStep) + ".json";
             std::string command = envStream.str() + " OFILE=" + statsFile + " " + OPT + " -load-pass-plugin=" + PLUGIN_PATH + " -passes=" + flag + " < " + currentIRFile + " > " + nextIRFile;
-            
             if (!runCommand(command, statsFile, result.stats, result.finalAnalysis)) return false;
             currentIRFile = nextIRFile;
         }
@@ -230,12 +226,14 @@ ObfuscationResult performObfuscation(const std::string& inputSourceFile, const s
     
     if (!applyPass("String Obfuscation", "string-obf", config.stringObfuscation, config.stringObfCycles)) return result;
     if (!applyPass("Bogus Control Flow", "bogus-insert", config.bogusControlFlow, config.bogusControlFlowCycles)) return result;
+    if (!applyPass("Fake Loops", "fake-loop", config.fakeLoops, config.fakeLoopCycles)) return result;
     if (!applyPass("Control Flow Flattening", "cff", config.controlFlowFlattening, config.flatteningCycles)) return result;
 
     printStep("3: Finalizing and Linking");
     progressBar(90, "Saving & analyzing final IR...");
     runCommand("cp " + currentIRFile + " " + FINAL_IR_FILENAME, "", result.stats, result.finalAnalysis);
-    runCommand(OPT + " -stats -S " + FINAL_IR_FILENAME + " -o /dev/null", "", result.stats, result.finalAnalysis);
+    result.finalAnalysis["Code Size (bytes)"] = std::filesystem::file_size(FINAL_IR_FILENAME);
+    runCommand(OPT + " -p=instcount,basicaa -stats -S " + FINAL_IR_FILENAME + " -o /dev/null", "", result.stats, result.finalAnalysis);
 
     progressBar(97, "Compiling & linking executable...");
     if (!runCommand(CLANG + " " + FINAL_IR_FILENAME + " " + RUNTIME_SRC + " -o " + outputExecutableName, "", result.stats, result.finalAnalysis)) return result;
@@ -263,27 +261,27 @@ ObfuscationConfig selectPreset() {
     ObfuscationConfig config;
     printStep("Select Obfuscation Preset");
     std::cout << "  1. " << Color::GREEN << "Light" << Color::RESET << " (String Obfuscation)\n";
-    std::cout << "  2. " << Color::YELLOW << "Balanced" << Color::RESET << " (String Obf + Aggressive Bogus CFG)\n";
+    std::cout << "  2. " << Color::YELLOW << "Balanced" << Color::RESET << " (String Obf + Bogus CFG + Fake Loops)\n";
     std::cout << "  3. " << Color::RED << "Heavy" << Color::RESET << " (Intense String Obf + Intense Bogus CFG)\n";
     std::cout << "  4. " << Color::BOLD << Color::RED << "Nightmare" << Color::RESET << " (All passes + CFG Flattening)\n";
     std::cout << "  5. " << Color::CYAN << "Custom" << Color::RESET << " (Fine-tune each pass)\n";
-
     int choice;
     std::cout << "\nSelect preset [1-5]: " << Color::BOLD;
     choice = getIntegerInput();
-
     char yn;
     switch (choice) {
         case 1: config.presetName = "Light"; config.stringObfuscation = true; break;
-        case 2: config.presetName = "Balanced"; config.stringObfuscation = true; config.bogusControlFlow = true; config.bogusControlFlowCycles=5; config.bogusControlFlowRatio=40; break;
-        case 3: config.presetName = "Heavy"; config.stringObfuscation = true; config.stringObfCycles=2; config.bogusControlFlow = true; config.bogusControlFlowCycles=10; config.bogusControlFlowRatio=60; break;
-        case 4: config.presetName = "Nightmare"; config.stringObfuscation = true; config.stringObfCycles=2; config.bogusControlFlow = true; config.bogusControlFlowCycles=5; config.controlFlowFlattening = true; break;
+        case 2: config.presetName = "Balanced"; config.stringObfuscation = true; config.bogusControlFlow = true; config.fakeLoops = true; config.bogusControlFlowRatio=30; break;
+        case 3: config.presetName = "Heavy"; config.stringObfuscation = true; config.stringObfCycles=2; config.bogusControlFlow = true; config.bogusControlFlowCycles=5; config.bogusControlFlowRatio=60; config.fakeLoops = true; config.fakeLoopCycles = 2; break;
+        case 4: config.presetName = "Nightmare"; config.stringObfuscation = true; config.stringObfCycles=2; config.bogusControlFlow = true; config.bogusControlFlowCycles=5; config.controlFlowFlattening = true; config.fakeLoops = true; break;
         case 5:
             config.presetName = "Custom";
             std::cout << "\n--- Custom Settings ---\nEnable String Obfuscation? (y/n): " << Color::BOLD; std::cin >> yn; std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); config.stringObfuscation = (yn == 'y' || yn == 'Y'); std::cout << Color::RESET;
             if (config.stringObfuscation) { std::cout << "  Cycles: " << Color::BOLD; config.stringObfCycles = getIntegerInput(); }
             std::cout << "Enable Bogus Control Flow? (y/n): " << Color::BOLD; std::cin >> yn; std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); config.bogusControlFlow = (yn == 'y' || yn == 'Y'); std::cout << Color::RESET;
             if (config.bogusControlFlow) { std::cout << "  Cycles: " << Color::BOLD; config.bogusControlFlowCycles = getIntegerInput(); std::cout << "  Injection Ratio (0-100)%: " << Color::BOLD; config.bogusControlFlowRatio = getIntegerInput(); }
+            std::cout << "Enable Fake Loops? (y/n): " << Color::BOLD; std::cin >> yn; std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); config.fakeLoops = (yn == 'y' || yn == 'Y'); std::cout << Color::RESET;
+            if (config.fakeLoops) { std::cout << "  Cycles: " << Color::BOLD; config.fakeLoopCycles = getIntegerInput(); }
             std::cout << "Enable Control Flow Flattening? (y/n): " << Color::BOLD; std::cin >> yn; std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); config.controlFlowFlattening = (yn == 'y' || yn == 'Y'); std::cout << Color::RESET;
             if (config.controlFlowFlattening) { std::cout << "  Cycles: " << Color::BOLD; config.flatteningCycles = getIntegerInput(); }
             break;
@@ -303,6 +301,11 @@ int main(int argc, char *argv[]) {
 
     std::string currentInputFile = argv[1];
     ObfuscationConfig currentConfig;
+    currentConfig.presetName = "Balanced";
+    currentConfig.stringObfuscation = true;
+    currentConfig.bogusControlFlow = true;
+    currentConfig.fakeLoops = true;
+    currentConfig.bogusControlFlowRatio = 30;
 
     while (true) {
         printHeader("SIH LLVM Obfuscator");
@@ -310,16 +313,22 @@ int main(int argc, char *argv[]) {
 
         std::cout << Color::BOLD << "Main Menu:\n" << Color::RESET;
         std::cout << "  1. Change Input Source File\n  2. Select Obfuscation Preset\n  3. Set Obfuscation Seed (0 for random)\n";
-        std::cout << "  4. " << Color::GREEN << "Run Obfuscation Process" << Color::RESET << "\n  5. Quit\n";
+        std::cout << "  4. " << Color::GREEN << "Run Obfuscation Process" << Color::RESET << "\n";
+        // --- MODIFICATION: Added new menu items ---
+        std::cout << "  5. " << Color::CYAN << "Test Run Obfuscated IR" << Color::RESET << "\n";
+        std::cout << "  6. Quit\n";
         
-        std::cout << "\nSelect option [1-5]: " << Color::BOLD;
+        std::cout << "\nSelect option [1-6]: " << Color::BOLD;
+        // --- END MODIFICATION ---
         int choice = getIntegerInput();
 
         switch (choice) {
             case 1: {
                 printStep("Change Input Source File");
                 std::cout << "Enter new source file path: " << Color::BOLD;
-                std::getline(std::cin, currentInputFile);
+                std::string newInputFile;
+                std::getline(std::cin, newInputFile);
+                if (!newInputFile.empty()) currentInputFile = newInputFile;
                 std::cout << Color::RESET;
                 if (!std::filesystem::exists(currentInputFile)) printError("File not found: " + currentInputFile);
                 else printSuccess("Input file set to: " + currentInputFile);
@@ -353,36 +362,30 @@ int main(int argc, char *argv[]) {
                 if (result.success) {
                     printHeader("Obfuscation Summary");
                     printSuccess("Obfuscation process finished successfully!");
-                    
                     std::cout << "\n";
                     printStep("Analysis Comparison");
                     std::cout << Color::BOLD << Color::CYAN << std::left << std::setw(25) << "Metric" << std::setw(15) << "Before" << std::setw(25) << "After" << Color::RESET << "\n";
                     std::cout << "------------------------------------------------------------\n";
-
                     auto print_analysis_row = [&](const std::string& key, const std::string& display_name) {
                          if (result.initialAnalysis.count(key) && result.finalAnalysis.count(key)) {
-                            long long initialVal = result.initialAnalysis[key];
-                            long long finalVal = result.finalAnalysis[key];
-                            long long change = finalVal - initialVal;
-                            
-                            std::stringstream afterSS;
-                            afterSS << finalVal;
-
-                            if (change != 0) {
-                                double pct_change = (initialVal == 0) ? 100.0 : (double)change / initialVal * 100.0;
-                                afterSS << " (" << (change > 0 ? "+" : "") << change << " | " 
-                                        << (change > 0 ? "+" : "") << std::fixed << std::setprecision(1) << pct_change << "%)";
-                            }
-                             std::cout << Color::CYAN << std::left << std::setw(25) << display_name << Color::RESET 
-                                       << std::left << std::setw(15) << initialVal 
-                                       << std::left << std::setw(25) << afterSS.str() << "\n";
+                             long long initialVal = result.initialAnalysis[key];
+                             long long finalVal = result.finalAnalysis[key];
+                             long long change = finalVal - initialVal;
+                             std::stringstream afterSS;
+                             afterSS << finalVal;
+                             if (change != 0) {
+                                 double pct_change = (initialVal == 0) ? 100.0 : (double)change / initialVal * 100.0;
+                                 afterSS << " (" << (change > 0 ? "+" : "") << change << " | " 
+                                         << (change > 0 ? "+" : "") << std::fixed << std::setprecision(1) << pct_change << "%)";
+                             }
+                              std::cout << Color::CYAN << std::left << std::setw(25) << display_name << Color::RESET 
+                                        << std::left << std::setw(15) << initialVal 
+                                        << std::left << std::setw(25) << afterSS.str() << "\n";
                          }
                     };
-
                     print_analysis_row("Instruction Count", "Instruction Count");
                     print_analysis_row("Basic Block Count", "Basic Block Count");
-
-
+                    print_analysis_row("Code Size (bytes)", "Code Size (bytes)");
                     printStep("Obfuscation Statistics (Changes Made)");
                     if (result.stats.empty()) {
                         std::cout << "  No specific statistics were reported by the passes.\n";
@@ -391,32 +394,63 @@ int main(int argc, char *argv[]) {
                             printInfo("  " + pair.first, std::to_string(pair.second));
                         }
                     }
-                    
                     printStep("Output Files (Absolute Paths)");
                     std::filesystem::path currentPath = std::filesystem::current_path();
                     printInfo("  Executable", (currentPath / outputExeName).string());
                     printInfo("  To Run Executable", "./" + outputExeName);
-                    printInfo("  Final LLVM IR", (currentPath / "final_obfuscated.ll").string());
-                                        
+                    printInfo("  Final Readable LLVM IR", (currentPath / "final_readable_ir.ll").string());
                 } else {
-                    // FIX: Don't clear the screen on failure, just print the error header.
                     std::cout << "\n\n" << Color::BOLD << Color::RED;
                     std::cout << "=========================================================\n";
-                    std::cout << "                    Obfuscation Failed                   \n";
+                    std::cout << "                      Obfuscation Failed                 \n";
                     std::cout << "=========================================================\n\n" << Color::RESET;
                     printError("The process encountered an error. Please review the [DEBUG] logs above for details.");
                 }
-
                 std::cout << "\nPress Enter to return to the main menu...";
                 std::cin.get();
                 break;
             }
-            case 5: std::cout << "\nThank you for using the SIH LLVM Obfuscator!\n"; return 0;
+            // --- MODIFICATION: Added Case 5 for Test Run ---
+            case 5: {
+                printStep("Test Run Obfuscated IR");
+                const std::string irFile = "final_readable_ir.ll";
+                if (!std::filesystem::exists(irFile)) {
+                    printError("File not found: " + irFile);
+                    printInfo("Hint", "Please run the obfuscation process (Option 4) first to generate it.");
+                } else {
+                    const std::string objFile = "obfuscated_ir.o";
+                    const std::string exeFile = "run_obfuscated_ir";
+                    const std::string runtimeSrc = "src/runtime/decryptor.c";
+
+                    std::cout << "Compiling IR to object file...\n";
+                    if (system(("llc-14 -filetype=obj " + irFile + " -o " + objFile).c_str()) == 0) {
+                        printSuccess("IR compiled successfully.");
+                        std::cout << "Linking object file with runtime...\n";
+                        if (system(("clang-14 " + objFile + " " + runtimeSrc + " -o " + exeFile).c_str()) == 0) {
+                            printSuccess("Linking successful. Executing program...");
+                            std::cout << "\n" << Color::BOLD << Color::YELLOW << "--- Program Output ---\n" << Color::RESET;
+                            system(("./" + exeFile).c_str());
+                            std::cout << Color::BOLD << Color::YELLOW << "---  End of Output  ---\n" << Color::RESET;
+                        } else {
+                            printError("Linking failed. Check compiler output.");
+                        }
+                    } else {
+                        printError("Compiling IR failed. Check llc-14 output.");
+                    }
+
+                    // Cleanup
+                    std::filesystem::remove(objFile);
+                    std::filesystem::remove(exeFile);
+                }
+                std::cout << "\nPress Enter to continue...";
+                std::cin.get();
+                break;
+            }
+            // --- MODIFICATION: Changed Quit to Case 6 ---
+            case 6: std::cout << "\nThank you for using the SIH LLVM Obfuscator!\n"; return 0;
             default: printError("Invalid option."); std::cout << "\nPress Enter to continue..."; std::cin.get(); break;
         }
     }
 
     return 0;
 }
-
-
